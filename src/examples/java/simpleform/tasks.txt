@@ -1,0 +1,17 @@
+Vert.x TODO
+===========
+
+1. Pull requests for mongo-persistor. Update module in repo
+2. Also release work-queue, after fixing the reply issue.
+3. TCCL
+4. form-data
+5. async redis
+
+=================
+
+
+
+
+
+
+
