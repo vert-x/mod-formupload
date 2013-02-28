@@ -112,7 +112,7 @@ public class Upload implements ReadStream {
           });
           resume();
         } else {
-          resultHandler.handle(new AsyncResult<Void>(ar.exception));
+          resultHandler.handle(new AsyncResult<Void>().setFailure(ar.exception));
         }
       }
     });
