@@ -18,7 +18,7 @@
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.deploy.Verticle;
+import org.vertx.java.platform.Verticle;
 import org.vertx.mods.formupload.Attribute;
 import org.vertx.mods.formupload.MultipartRequest;
 
@@ -27,6 +27,7 @@ public class SimpleFormServer extends Verticle {
   public void start() {
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
+        System.out.println("uri is " + req.uri);
         if (req.uri.equals("/")) {
           // Serve the index page
           req.response.sendFile("index.html");
@@ -36,15 +37,17 @@ public class SimpleFormServer extends Verticle {
           mpReq.attributeHandler(new Handler<Attribute>() {
             @Override
             public void handle(Attribute attr) {
+              System.out.println("Got attr " + attr.name + " : " + attr.value + "\n");
+
               req.response.write("Got attr " + attr.name + " : " + attr.value + "\n");
             }
           });
           req.endHandler(new SimpleHandler() {
             protected void handle() {
+              System.out.println("end of request");
               req.response.end();
             }
           });
-
         } else {
           req.response.statusCode = 404;
           req.response.end();

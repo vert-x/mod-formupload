@@ -36,9 +36,6 @@ public class MultipartRequest {
     this.req = req;
     // TODO - this is a bit of a hack
     nettyReq = ((DefaultHttpServerRequest)req).getNettyRequest();
-    for (Map.Entry<String, String> header: req.headers().entrySet()) {
-      nettyReq.headers().add(header.getKey(), header.getValue());
-    }
     try {
       decoder = new HttpPostRequestDecoder(new DataFactory(), nettyReq);
     } catch (Exception e) {
