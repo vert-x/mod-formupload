@@ -7,6 +7,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.http.impl.DefaultHttpServerRequest;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +34,8 @@ public class MultipartRequest {
   public MultipartRequest(Vertx vertx, HttpServerRequest req) {
     this.vertx = vertx;
     this.req = req;
-    nettyReq = new DefaultHttpRequest(HttpVersion.HTTP_1_1, new HttpMethod(req.method), req.uri);
+    // TODO - this is a bit of a hack
+    nettyReq = ((DefaultHttpServerRequest)req).getNettyRequest();
     for (Map.Entry<String, String> header: req.headers().entrySet()) {
       nettyReq.addHeader(header.getKey(), header.getValue());
     }
@@ -42,15 +44,6 @@ public class MultipartRequest {
     } catch (Exception e) {
       throw convertException(e);
     }
-    req.dataHandler(new Handler<Buffer>() {
-      public void handle(Buffer data) {
-        try {
-          decoder.offer(new DefaultHttpChunk(data.getChannelBuffer()));
-        } catch (Exception e) {
-          throw convertException(e);
-        }
-      }
-    });
   }
 
   public void attributeHandler(Handler<Attribute> handler) {
