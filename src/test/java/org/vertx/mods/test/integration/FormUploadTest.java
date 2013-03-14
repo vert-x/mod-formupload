@@ -41,27 +41,23 @@ public class FormUploadTest extends TestVerticle {
 
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-      if (req.uri.equals("/")) {
-        // Serve the index page
-        req.response.sendFile("index.html");
-      } else if (req.uri.startsWith("/form")) {
-        req.response.setChunked(true);
-        MultipartRequest mpReq = new MultipartRequest(vertx, req);
-        mpReq.attributeHandler(new Handler<Attribute>() {
-          @Override
-          public void handle(Attribute attr) {
-            req.response.write("Got attr " + attr.name + " : " + attr.value + "\n");
-          }
-        });
-        req.endHandler(new SimpleHandler() {
-          protected void handle() {
-            req.response.end();
-          }
-        });
-      } else {
-        req.response.statusCode = 404;
-        req.response.end();
-      }
+        if (req.uri.startsWith("/form")) {
+          req.response.setChunked(true);
+          MultipartRequest mpReq = new MultipartRequest(vertx, req);
+          mpReq.attributeHandler(new Handler<Attribute>() {
+            @Override
+            public void handle(Attribute attr) {
+              req.response.write("Got attr " + attr.name + " : " + attr.value + "\n");
+              // do some asserts here
+              // etc
+            }
+          });
+          req.endHandler(new SimpleHandler() {
+            protected void handle() {
+              req.response.end();
+            }
+          });
+        }
       }
     }).listen(8080);
 
@@ -70,9 +66,15 @@ public class FormUploadTest extends TestVerticle {
       public void handle(HttpClientResponse resp) {
         // assert the response
         assertEquals(200, resp.statusCode);
+        resp.bodyHandler(new Handler<Buffer>() {
+          public void handle(Buffer body) {
+            // assert the body if you like
+          }
+        });
         testComplete();
       }
     });
+    // The tricky part of this test is working out what needs to be sent to simulate the form.
     Buffer buffer = new Buffer("this is the body of the POST");
     req.headers().put("content-length", buffer.length());
     req.write(buffer).end();
