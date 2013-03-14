@@ -1,8 +1,8 @@
 package org.vertx.mods.formupload;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.handler.codec.http.*;
-import org.jboss.netty.handler.codec.http.multipart.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.multipart.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
@@ -37,7 +37,7 @@ public class MultipartRequest {
     // TODO - this is a bit of a hack
     nettyReq = ((DefaultHttpServerRequest)req).getNettyRequest();
     for (Map.Entry<String, String> header: req.headers().entrySet()) {
-      nettyReq.addHeader(header.getKey(), header.getValue());
+      nettyReq.headers().add(header.getKey(), header.getValue());
     }
     try {
       decoder = new HttpPostRequestDecoder(new DataFactory(), nettyReq);
@@ -90,14 +90,14 @@ public class MultipartRequest {
     }
 
     @Override
-    public void setContent(ChannelBuffer channelBuffer) throws IOException {
+    public void setContent(ByteBuf channelBuffer) throws IOException {
       completed = true;
       upload.receiveData(new Buffer(channelBuffer));
       upload.complete();
     }
 
     @Override
-    public void addContent(ChannelBuffer channelBuffer, boolean last) throws IOException {
+    public void addContent(ByteBuf channelBuffer, boolean last) throws IOException {
       upload.receiveData(new Buffer(channelBuffer));
       if (last) {
         completed = true;
@@ -136,12 +136,7 @@ public class MultipartRequest {
     }
 
     @Override
-    public ChannelBuffer getChannelBuffer() throws IOException {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ChannelBuffer getChunk(int i) throws IOException {
+    public ByteBuf getChunk(int i) throws IOException {
       throw new UnsupportedOperationException();
     }
 
@@ -224,6 +219,46 @@ public class MultipartRequest {
     public String getContentTransferEncoding() {
       return contentTransferEncoding;
     }
+
+    @Override
+    public ByteBuf getByteBuf() throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public FileUpload copy() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public FileUpload retain() {
+      return this;
+    }
+
+    @Override
+    public FileUpload retain(int increment) {
+      return this;
+    }
+
+    @Override
+    public ByteBuf data() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int refCnt() {
+      return 1;
+    }
+
+    @Override
+    public boolean release() {
+      return false;
+    }
+
+    @Override
+    public boolean release(int decrement) {
+      return false;
+    }
   }
 
 
@@ -238,13 +273,13 @@ public class MultipartRequest {
     }
 
     @Override
-    public void setContent(ChannelBuffer channelBuffer) throws IOException {
+    public void setContent(ByteBuf channelBuffer) throws IOException {
       super.setContent(channelBuffer);
       attributeCreated();
     }
 
     @Override
-    public void addContent(ChannelBuffer channelBuffer, boolean last) throws IOException {
+    public void addContent(ByteBuf channelBuffer, boolean last) throws IOException {
       super.addContent(channelBuffer, last);
       if (isCompleted()) {
         attributeCreated();
@@ -268,8 +303,8 @@ public class MultipartRequest {
   private class DataFactory implements HttpDataFactory {
 
     @Override
-    public org.jboss.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest, String name) {
-      org.jboss.netty.handler.codec.http.multipart.Attribute nettyAttr;
+    public io.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest, String name) {
+      io.netty.handler.codec.http.multipart.Attribute nettyAttr;
       try {
         nettyAttr = new InternalMemoryAttribute(name);
       } catch (Exception e) {
@@ -279,9 +314,9 @@ public class MultipartRequest {
     }
 
     @Override
-    public org.jboss.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest,
+    public io.netty.handler.codec.http.multipart.Attribute createAttribute(HttpRequest httpRequest,
                                                                                   String name, String value) {
-      org.jboss.netty.handler.codec.http.multipart.Attribute nettyAttr;
+      io.netty.handler.codec.http.multipart.Attribute nettyAttr;
       try {
         nettyAttr = new InternalMemoryAttribute(name, value);
       } catch (Exception e) {
