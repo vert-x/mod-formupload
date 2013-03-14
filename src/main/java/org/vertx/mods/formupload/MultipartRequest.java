@@ -1,7 +1,9 @@
 package org.vertx.mods.formupload;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -19,6 +21,7 @@ import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class MultipartRequest {
 
@@ -38,6 +41,26 @@ public class MultipartRequest {
     nettyReq = ((DefaultHttpServerRequest)req).getNettyRequest();
     try {
       decoder = new HttpPostRequestDecoder(new DataFactory(), nettyReq);
+      req.dataHandler(new Handler<Buffer>() {
+        @Override
+        public void handle(Buffer event) {
+          try {
+            decoder.offer(new DefaultHttpContent(event.getByteBuf()));
+          } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+            throw convertException(e);
+          }
+        }
+      });
+      req.endHandler(new Handler<Void>() {
+        @Override
+        public void handle(Void event) {
+          try {
+            decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+          } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+            throw convertException(e);
+          }
+        }
+      });
     } catch (Exception e) {
       throw convertException(e);
     }
