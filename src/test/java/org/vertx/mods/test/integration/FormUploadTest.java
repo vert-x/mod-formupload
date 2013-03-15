@@ -4,17 +4,16 @@ import org.junit.Test;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
 import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.mods.formupload.Attribute;
 import org.vertx.mods.formupload.MultipartRequest;
 import org.vertx.testtools.TestVerticle;
 import org.vertx.testtools.TestVerticleInfo;
 
-import static org.vertx.testtools.VertxAssert.*;
+import static org.vertx.testtools.VertxAssert.assertEquals;
+import static org.vertx.testtools.VertxAssert.testComplete;
 
 /*
  * Copyright 2013 Red Hat, Inc.
@@ -75,6 +74,7 @@ public class FormUploadTest extends TestVerticle {
       }
     });
     // The tricky part of this test is working out what needs to be sent to simulate the form.
+
     Buffer buffer = new Buffer("this is the body of the POST");
     req.headers().put("content-length", buffer.length());
     req.write(buffer).end();

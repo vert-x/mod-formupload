@@ -307,14 +307,9 @@ public class MultipartRequest {
     }
 
     void attributeCreated() {
-      if (!getName().equals("name")) {
-        // Netty has a habit of adding multiple extra attributes of name 'name' and value of the name of the
-        // real attribute, so we screen these out.
-        // This is however a problem - what if the user has a real attribute called 'name'?
-        attributes.put(getName(), getValue());
-        if (attrHandler != null) {
-          attrHandler.handle(new Attribute(getName(), getValue()));
-        }
+      attributes.put(getName(), getValue());
+      if (attrHandler != null) {
+        attrHandler.handle(new Attribute(getName(), getValue()));
       }
     }
   }
