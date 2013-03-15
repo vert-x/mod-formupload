@@ -1,20 +1,3 @@
-package org.vertx.mods.test.integration;
-
-import org.junit.Test;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.mods.formupload.Attribute;
-import org.vertx.mods.formupload.MultipartRequest;
-import org.vertx.testtools.TestVerticle;
-import org.vertx.testtools.TestVerticleInfo;
-
-import static org.vertx.testtools.VertxAssert.assertEquals;
-import static org.vertx.testtools.VertxAssert.testComplete;
-
 /*
  * Copyright 2013 Red Hat, Inc.
  *
@@ -31,24 +14,68 @@ import static org.vertx.testtools.VertxAssert.testComplete;
  * under the License.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+package org.vertx.mods.test.integration;
+
+import org.junit.Test;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.http.HttpClientRequest;
+import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.mods.formupload.Attribute;
+import org.vertx.mods.formupload.MultipartRequest;
+import org.vertx.mods.formupload.Upload;
+import org.vertx.testtools.TestVerticle;
+import org.vertx.testtools.TestVerticleInfo;
+
+
+import static org.vertx.testtools.VertxAssert.*;
+
 @TestVerticleInfo(includes="io.vertx~mod-formupload~2.0.0-SNAPSHOT")
 public class FormUploadTest extends TestVerticle {
 
-  @Test
-  public void testFormUpload() {
+  @Test()
+  public void testFormUploadFile() throws Exception {
 
+    final String content = "Vert.x rocks!";
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
         if (req.uri.startsWith("/form")) {
           req.response.setChunked(true);
-          MultipartRequest mpReq = new MultipartRequest(vertx, req);
+          final MultipartRequest mpReq = new MultipartRequest(vertx, req);
           mpReq.attributeHandler(new Handler<Attribute>() {
             @Override
             public void handle(Attribute attr) {
-              req.response.write("Got attr " + attr.name + " : " + attr.value + "\n");
-              // do some asserts here
-              // etc
+              assertEquals("name", attr.name);
+              assertEquals("file", attr.value);
+              mpReq.attributeHandler(new Handler<Attribute>() {
+                @Override
+                public void handle(Attribute attr) {
+                  assertEquals("filename", attr.name);
+                  assertEquals("tmp-0.txt", attr.value);
+                  mpReq.attributeHandler(new Handler<Attribute>() {
+                    @Override
+                    public void handle(Attribute attr) {
+                      assertEquals("Content-Type", attr.name);
+                      assertEquals("image/gif", attr.value);
+                    }
+                  });
+                }
+              });
+            }
+          });
+          mpReq.uploadHandler(new Handler<Upload>() {
+            @Override
+            public void handle(final Upload event) {
+              event.dataHandler(new Handler<Buffer>() {
+                @Override
+                public void handle(Buffer buffer) {
+                  assertEquals(content, buffer.toString("UTF-8"));
+                }
+              });
             }
           });
           req.endHandler(new SimpleHandler() {
@@ -67,19 +94,88 @@ public class FormUploadTest extends TestVerticle {
         assertEquals(200, resp.statusCode);
         resp.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer body) {
-            // assert the body if you like
+            assertEquals(0, body.length());
           }
         });
         testComplete();
       }
     });
-    // The tricky part of this test is working out what needs to be sent to simulate the form.
 
-    Buffer buffer = new Buffer("this is the body of the POST");
+    final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
+    Buffer buffer = new Buffer();
+    final String body =
+              "--" + boundary + "\r\n" +
+                      "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+                      "Content-Type: image/gif\r\n" +
+                      "\r\n" +
+                      content + "\r\n" +
+                      "--" + boundary + "--\r\n";
+
+    buffer.appendString(body);
     req.headers().put("content-length", buffer.length());
+    req.headers().put("content-type", "multipart/form-data; boundary=" + boundary);
     req.write(buffer).end();
-
   }
 
 
+  @Test()
+  public void testFormUploadAttributes() throws Exception {
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        if (req.uri.startsWith("/form")) {
+          req.response.setChunked(true);
+          final MultipartRequest mpReq = new MultipartRequest(vertx, req);
+          mpReq.attributeHandler(new Handler<Attribute>() {
+            @Override
+            public void handle(Attribute attr) {
+              assertEquals("framework", attr.name);
+              assertEquals("vertx", attr.value);
+              mpReq.attributeHandler(new Handler<Attribute>() {
+                @Override
+                public void handle(Attribute attr) {
+                  assertEquals("runson", attr.name);
+                  assertEquals("jvm", attr.value);
+                }
+              });
+            }
+          });
+          mpReq.uploadHandler(new Handler<Upload>() {
+            @Override
+            public void handle(final Upload event) {
+              event.dataHandler(new Handler<Buffer>() {
+                @Override
+                public void handle(Buffer buffer) {
+                  fail();
+                }
+              });
+            }
+          });
+          req.endHandler(new SimpleHandler() {
+            protected void handle() {
+              req.response.end();
+            }
+          });
+        }
+      }
+    }).listen(8080);
+
+    HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+      @Override
+      public void handle(HttpClientResponse resp) {
+        // assert the response
+        assertEquals(200, resp.statusCode);
+        resp.bodyHandler(new Handler<Buffer>() {
+          public void handle(Buffer body) {
+            assertEquals(0, body.length());
+          }
+        });
+        testComplete();
+      }
+    });
+    Buffer buffer = new Buffer();
+    buffer.appendString("framework=vertx&runson=jvm");
+    req.headers().put("content-length", buffer.length());
+    req.headers().put("content-type", "application/x-www-form-urlencoded");
+    req.write(buffer).end();
+  }
 }

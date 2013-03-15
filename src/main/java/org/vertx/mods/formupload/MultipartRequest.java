@@ -82,13 +82,13 @@ public class MultipartRequest {
     return attributes.keySet();
   }
 
-  private RuntimeException convertException(Exception e) {
+  private static RuntimeException convertException(Exception e) {
     RuntimeException re = new RuntimeException(e.getMessage());
     re.setStackTrace(e.getStackTrace());
     return re;
   }
 
-  private class NettyFileUpload implements FileUpload {
+  private final static class NettyFileUpload implements FileUpload {
 
     private final Upload upload;
 
@@ -293,17 +293,9 @@ public class MultipartRequest {
     }
 
     @Override
-    public void setContent(ByteBuf channelBuffer) throws IOException {
-      super.setContent(channelBuffer);
+    public void setValue(String value) throws IOException {
+      super.setValue(value);
       attributeCreated();
-    }
-
-    @Override
-    public void addContent(ByteBuf channelBuffer, boolean last) throws IOException {
-      super.addContent(channelBuffer, last);
-      if (isCompleted()) {
-        attributeCreated();
-      }
     }
 
     void attributeCreated() {
