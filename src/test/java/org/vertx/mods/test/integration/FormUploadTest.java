@@ -184,4 +184,77 @@ public class FormUploadTest extends TestVerticle {
         req.write(buffer).end();      }
     });
   }
+
+
+  @Test
+  public void testFormUploadAttributes2() throws Exception {
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        if (req.uri.startsWith("/form")) {
+          req.response.setChunked(true);
+          final MultipartRequest mpReq = new MultipartRequest(vertx, req);
+          mpReq.attributeHandler(new Handler<Attribute>() {
+            @Override
+            public void handle(Attribute attr) {
+              assertEquals("origin", attr.name);
+              assertEquals("junit-testUserAlias", attr.value);
+              mpReq.attributeHandler(new Handler<Attribute>() {
+                @Override
+                public void handle(Attribute attr) {
+                  assertEquals("login", attr.name);
+                  assertEquals("admin@foo.bar", attr.value);
+                  mpReq.attributeHandler(new Handler<Attribute>() {
+                    @Override
+                    public void handle(Attribute attr) {
+                      assertEquals("password", attr.name);
+                      assertEquals("admin", attr.value);
+                    }
+                  });
+                }
+              });
+            }
+          });
+          mpReq.uploadHandler(new Handler<Upload>() {
+            @Override
+            public void handle(final Upload event) {
+              event.dataHandler(new Handler<Buffer>() {
+                @Override
+                public void handle(Buffer buffer) {
+                  fail();
+                }
+              });
+            }
+          });
+          req.endHandler(new SimpleHandler() {
+            protected void handle() {
+              req.response.end();
+            }
+          });
+        }
+      }
+    }).listen(8080, "0.0.0.0", new Handler<HttpServer>() {
+      @Override
+      public void handle(HttpServer event) {
+
+        HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            // assert the response
+            assertEquals(200, resp.statusCode);
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer body) {
+                assertEquals(0, body.length());
+              }
+            });
+            testComplete();
+          }
+        });
+        Buffer buffer = new Buffer();
+        buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&password=admin");
+        req.headers().put("content-length", buffer.length());
+        req.headers().put("content-type", "application/x-www-form-urlencoded");
+        req.write(buffer).end();
+      }
+    });
+  }
 }
