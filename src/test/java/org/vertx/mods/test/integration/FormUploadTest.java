@@ -24,6 +24,7 @@ import org.vertx.java.core.SimpleHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.mods.formupload.Attribute;
 import org.vertx.mods.formupload.MultipartRequest;
@@ -37,7 +38,7 @@ import static org.vertx.testtools.VertxAssert.*;
 @TestVerticleInfo(includes="io.vertx~mod-formupload~2.0.0-SNAPSHOT")
 public class FormUploadTest extends TestVerticle {
 
-  @Test()
+  @Test
   public void testFormUploadFile() throws Exception {
 
     final String content = "Vert.x rocks!";
@@ -85,40 +86,42 @@ public class FormUploadTest extends TestVerticle {
           });
         }
       }
-    }).listen(8080);
-
-    HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+    }).listen(8080, "0.0.0.0", new Handler<HttpServer>() {
       @Override
-      public void handle(HttpClientResponse resp) {
-        // assert the response
-        assertEquals(200, resp.statusCode);
-        resp.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer body) {
-            assertEquals(0, body.length());
+      public void handle(HttpServer event) {
+        HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            // assert the response
+            assertEquals(200, resp.statusCode);
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer body) {
+                assertEquals(0, body.length());
+              }
+            });
+            testComplete();
           }
         });
-        testComplete();
-      }
+
+        final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
+        Buffer buffer = new Buffer();
+        final String body =
+                "--" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+                        "Content-Type: image/gif\r\n" +
+                        "\r\n" +
+                        content + "\r\n" +
+                        "--" + boundary + "--\r\n";
+
+        buffer.appendString(body);
+        req.headers().put("content-length", buffer.length());
+        req.headers().put("content-type", "multipart/form-data; boundary=" + boundary);
+        req.write(buffer).end();      }
     });
-
-    final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
-    Buffer buffer = new Buffer();
-    final String body =
-              "--" + boundary + "\r\n" +
-                      "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
-                      "Content-Type: image/gif\r\n" +
-                      "\r\n" +
-                      content + "\r\n" +
-                      "--" + boundary + "--\r\n";
-
-    buffer.appendString(body);
-    req.headers().put("content-length", buffer.length());
-    req.headers().put("content-type", "multipart/form-data; boundary=" + boundary);
-    req.write(buffer).end();
   }
 
 
-  @Test()
+  @Test
   public void testFormUploadAttributes() throws Exception {
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
@@ -157,25 +160,28 @@ public class FormUploadTest extends TestVerticle {
           });
         }
       }
-    }).listen(8080);
-
-    HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+    }).listen(8080, "0.0.0.0", new Handler<HttpServer>() {
       @Override
-      public void handle(HttpClientResponse resp) {
-        // assert the response
-        assertEquals(200, resp.statusCode);
-        resp.bodyHandler(new Handler<Buffer>() {
-          public void handle(Buffer body) {
-            assertEquals(0, body.length());
+      public void handle(HttpServer event) {
+
+        HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
+          @Override
+          public void handle(HttpClientResponse resp) {
+            // assert the response
+            assertEquals(200, resp.statusCode);
+            resp.bodyHandler(new Handler<Buffer>() {
+              public void handle(Buffer body) {
+                assertEquals(0, body.length());
+              }
+            });
+            testComplete();
           }
         });
-        testComplete();
-      }
+        Buffer buffer = new Buffer();
+        buffer.appendString("framework=vertx&runson=jvm");
+        req.headers().put("content-length", buffer.length());
+        req.headers().put("content-type", "application/x-www-form-urlencoded");
+        req.write(buffer).end();      }
     });
-    Buffer buffer = new Buffer();
-    buffer.appendString("framework=vertx&runson=jvm");
-    req.headers().put("content-length", buffer.length());
-    req.headers().put("content-type", "application/x-www-form-urlencoded");
-    req.write(buffer).end();
   }
 }
