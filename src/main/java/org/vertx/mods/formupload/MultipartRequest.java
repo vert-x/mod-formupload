@@ -1,7 +1,10 @@
 package org.vertx.mods.formupload;
 
+import io.netty.buffer.BufUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.*;
@@ -38,14 +41,20 @@ public class MultipartRequest {
     this.vertx = vertx;
     this.req = req;
     // TODO - this is a bit of a hack
-    nettyReq = ((DefaultHttpServerRequest)req).getNettyRequest();
+    HttpRequest nettyReq = ((DefaultHttpServerRequest)req).getNettyRequest();
     try {
+      if (nettyReq instanceof HttpContent) {
+          // This is a work around for a bug in netty. Will remove once upgrade netty
+          nettyReq = ((FullHttpRequest) nettyReq).copy();
+      }
+      this.nettyReq = nettyReq;
       decoder = new HttpPostRequestDecoder(new DataFactory(), nettyReq);
       req.dataHandler(new Handler<Buffer>() {
         @Override
         public void handle(Buffer event) {
           try {
-            decoder.offer(new DefaultHttpContent(event.getByteBuf()));
+            // This is a work around for a bug in netty. Will remove once upgrade netty
+            decoder.offer(new DefaultHttpContent(event.getByteBuf().copy()));
           } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
             throw convertException(e);
           }
@@ -111,18 +120,19 @@ public class MultipartRequest {
 
     @Override
     public void setContent(ByteBuf channelBuffer) throws IOException {
-      completed = true;
-      upload.receiveData(new Buffer(channelBuffer));
-      upload.complete();
+        completed = true;
+        upload.receiveData(new Buffer(channelBuffer));
+        upload.complete();
     }
 
     @Override
     public void addContent(ByteBuf channelBuffer, boolean last) throws IOException {
-      upload.receiveData(new Buffer(channelBuffer));
-      if (last) {
-        completed = true;
-        upload.complete();
-      }
+        upload.receiveData(new Buffer(channelBuffer));
+        if (last) {
+          completed = true;
+          upload.complete();
+        }
+
     }
 
     @Override
