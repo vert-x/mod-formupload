@@ -20,7 +20,7 @@ package org.vertx.mods.test.integration;
 
 import org.junit.Test;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.SimpleHandler;
+import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -44,8 +44,8 @@ public class FormUploadTest extends TestVerticle {
     final String content = "Vert.x rocks!";
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (req.uri.startsWith("/form")) {
-          req.response.setChunked(true);
+        if (req.uri().startsWith("/form")) {
+          req.response().setChunked(true);
           final MultipartRequest mpReq = new MultipartRequest(vertx, req);
           mpReq.attributeHandler(new Handler<Attribute>() {
             @Override
@@ -79,9 +79,9 @@ public class FormUploadTest extends TestVerticle {
               });
             }
           });
-          req.endHandler(new SimpleHandler() {
+          req.endHandler(new VoidHandler() {
             protected void handle() {
-              req.response.end();
+              req.response().end();
             }
           });
         }
@@ -93,7 +93,7 @@ public class FormUploadTest extends TestVerticle {
           @Override
           public void handle(HttpClientResponse resp) {
             // assert the response
-            assertEquals(200, resp.statusCode);
+            assertEquals(200, resp.statusCode());
             resp.bodyHandler(new Handler<Buffer>() {
               public void handle(Buffer body) {
                 assertEquals(0, body.length());
@@ -125,8 +125,8 @@ public class FormUploadTest extends TestVerticle {
   public void testFormUploadAttributes() throws Exception {
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (req.uri.startsWith("/form")) {
-          req.response.setChunked(true);
+        if (req.uri().startsWith("/form")) {
+          req.response().setChunked(true);
           final MultipartRequest mpReq = new MultipartRequest(vertx, req);
           mpReq.attributeHandler(new Handler<Attribute>() {
             @Override
@@ -153,9 +153,9 @@ public class FormUploadTest extends TestVerticle {
               });
             }
           });
-          req.endHandler(new SimpleHandler() {
+          req.endHandler(new VoidHandler() {
             protected void handle() {
-              req.response.end();
+              req.response().end();
             }
           });
         }
@@ -168,7 +168,7 @@ public class FormUploadTest extends TestVerticle {
           @Override
           public void handle(HttpClientResponse resp) {
             // assert the response
-            assertEquals(200, resp.statusCode);
+            assertEquals(200, resp.statusCode());
             resp.bodyHandler(new Handler<Buffer>() {
               public void handle(Buffer body) {
                 assertEquals(0, body.length());
@@ -190,8 +190,8 @@ public class FormUploadTest extends TestVerticle {
   public void testFormUploadAttributes2() throws Exception {
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (req.uri.startsWith("/form")) {
-          req.response.setChunked(true);
+        if (req.uri().startsWith("/form")) {
+          req.response().setChunked(true);
           final MultipartRequest mpReq = new MultipartRequest(vertx, req);
           mpReq.attributeHandler(new Handler<Attribute>() {
             @Override
@@ -225,9 +225,9 @@ public class FormUploadTest extends TestVerticle {
               });
             }
           });
-          req.endHandler(new SimpleHandler() {
+          req.endHandler(new VoidHandler() {
             protected void handle() {
-              req.response.end();
+              req.response().end();
             }
           });
         }
@@ -240,7 +240,7 @@ public class FormUploadTest extends TestVerticle {
           @Override
           public void handle(HttpClientResponse resp) {
             // assert the response
-            assertEquals(200, resp.statusCode);
+            assertEquals(200, resp.statusCode());
             resp.bodyHandler(new Handler<Buffer>() {
               public void handle(Buffer body) {
                 assertEquals(0, body.length());

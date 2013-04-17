@@ -7,6 +7,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.file.AsyncFile;
 import org.vertx.java.core.http.HttpServerRequest;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
 
@@ -15,7 +16,7 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Upload implements ReadStream {
+public class Upload implements ReadStream<Upload> {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -47,16 +48,18 @@ public class Upload implements ReadStream {
     this.size = size;
   }
 
-  public void dataHandler(Handler<Buffer> handler) {
+  public Upload dataHandler(Handler<Buffer> handler) {
     this.dataHandler = handler;
+    return this;
   }
 
-  public void pause() {
+  public Upload pause() {
     req.pause();
     paused = true;
+    return this;
   }
 
-  public void resume() {
+  public Upload resume() {
     if (paused) {
       req.resume();
       paused = false;
@@ -68,13 +71,16 @@ public class Upload implements ReadStream {
         endHandler.handle(null);
       }
     }
+    return this;
   }
 
-  public void exceptionHandler(Handler<Exception> handler) {
+  public Upload exceptionHandler(Handler<Exception> handler) {
+    return this;
   }
 
-  public void endHandler(Handler<Void> handler) {
+  public Upload endHandler(Handler<Void> handler) {
     this.endHandler = handler;
+    return this;
   }
 
   public void bodyHandler(final Handler<Buffer> handler) {
@@ -103,16 +109,16 @@ public class Upload implements ReadStream {
     vertx.fileSystem().open(filename, new AsyncResultHandler<AsyncFile>() {
       public void handle(final AsyncResult<AsyncFile> ar) {
         if (ar.succeeded()) {
-          Pump p = Pump.createPump(Upload.this, ar.result.getWriteStream());
+          Pump p = Pump.createPump(Upload.this, ar.result());
           p.start();
           endHandler(new Handler<Void>() {
             public void handle(Void event) {
-              ar.result.close(resultHandler);
+              ar.result().close(resultHandler);
             }
           });
           resume();
         } else {
-          resultHandler.handle(new AsyncResult<Void>().setFailure(ar.exception));
+          resultHandler.handle(new DefaultFutureResult<Void>().setFailure(ar.cause()));
         }
       }
     });

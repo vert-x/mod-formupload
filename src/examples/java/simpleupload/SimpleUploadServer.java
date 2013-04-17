@@ -28,10 +28,10 @@ public class SimpleUploadServer extends Verticle {
   public void start() {
     vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
       public void handle(final HttpServerRequest req) {
-        if (req.uri.equals("/")) {
+        if (req.uri().equals("/")) {
           // Serve the index page
-          req.response.sendFile("index.html");
-        } else if (req.uri.startsWith("/form")) {
+          req.response().sendFile("index.html");
+        } else if (req.uri().startsWith("/form")) {
           MultipartRequest mpReq = new MultipartRequest(vertx, req);
           mpReq.uploadHandler(new Handler<Upload>() {
             @Override
@@ -40,17 +40,17 @@ public class SimpleUploadServer extends Verticle {
                 @Override
                 public void handle(AsyncResult<Void> res) {
                   if (res.succeeded()) {
-                    req.response.end("Upload successful, you should see the file in the server directory");
+                    req.response().end("Upload successful, you should see the file in the server directory");
                   } else {
-                    req.response.end("Upload failed");
+                    req.response().end("Upload failed");
                   }
                 }
               });
             }
           });
         } else {
-          req.response.statusCode = 404;
-          req.response.end();
+          req.response().setStatusCode(404);
+          req.response().end();
         }
       }
     }).listen(8080);

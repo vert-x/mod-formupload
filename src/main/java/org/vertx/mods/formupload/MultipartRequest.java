@@ -41,7 +41,7 @@ public class MultipartRequest {
     this.vertx = vertx;
     this.req = req;
     // TODO - this is a bit of a hack
-    HttpRequest nettyReq = ((DefaultHttpServerRequest)req).getNettyRequest();
+    HttpRequest nettyReq = ((DefaultHttpServerRequest)req).nettyRequest();
     try {
       if (nettyReq instanceof HttpContent) {
           // This is a work around for a bug in netty. Will remove once upgrade netty
