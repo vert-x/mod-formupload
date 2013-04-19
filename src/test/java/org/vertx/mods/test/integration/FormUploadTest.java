@@ -19,6 +19,8 @@
 package org.vertx.mods.test.integration;
 
 import org.junit.Test;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
@@ -86,9 +88,10 @@ public class FormUploadTest extends TestVerticle {
           });
         }
       }
-    }).listen(8080, "0.0.0.0", new Handler<HttpServer>() {
+    }).listen(8080, "0.0.0.0", new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
+      public void handle(AsyncResult<HttpServer> ar) {
+        assertTrue(ar.succeeded());
         HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
           @Override
           public void handle(HttpClientResponse resp) {
@@ -160,10 +163,10 @@ public class FormUploadTest extends TestVerticle {
           });
         }
       }
-    }).listen(8080, "0.0.0.0", new Handler<HttpServer>() {
+    }).listen(8080, "0.0.0.0", new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        assertTrue(ar.succeeded());
         HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
           @Override
           public void handle(HttpClientResponse resp) {
@@ -232,10 +235,10 @@ public class FormUploadTest extends TestVerticle {
           });
         }
       }
-    }).listen(8080, "0.0.0.0", new Handler<HttpServer>() {
+    }).listen(8080, "0.0.0.0", new AsyncResultHandler<HttpServer>() {
       @Override
-      public void handle(HttpServer event) {
-
+      public void handle(AsyncResult<HttpServer> ar) {
+        assertTrue(ar.succeeded());
         HttpClientRequest req = vertx.createHttpClient().setPort(8080).post("/form", new Handler<HttpClientResponse>() {
           @Override
           public void handle(HttpClientResponse resp) {

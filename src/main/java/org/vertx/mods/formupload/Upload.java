@@ -74,7 +74,7 @@ public class Upload implements ReadStream<Upload> {
     return this;
   }
 
-  public Upload exceptionHandler(Handler<Exception> handler) {
+  public Upload exceptionHandler(Handler<Throwable> handler) {
     return this;
   }
 
