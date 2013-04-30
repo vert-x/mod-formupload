@@ -117,8 +117,8 @@ public class FormUploadTest extends TestVerticle {
                         "--" + boundary + "--\r\n";
 
         buffer.appendString(body);
-        req.headers().put("content-length", buffer.length());
-        req.headers().put("content-type", "multipart/form-data; boundary=" + boundary);
+        req.headers().set("content-length", String.valueOf(buffer.length()));
+        req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
         req.write(buffer).end();      }
     });
   }
@@ -182,8 +182,8 @@ public class FormUploadTest extends TestVerticle {
         });
         Buffer buffer = new Buffer();
         buffer.appendString("framework=vertx&runson=jvm");
-        req.headers().put("content-length", buffer.length());
-        req.headers().put("content-type", "application/x-www-form-urlencoded");
+        req.headers().set("content-length", String.valueOf(buffer.length()));
+        req.headers().set("content-type", "application/x-www-form-urlencoded");
         req.write(buffer).end();      }
     });
   }
@@ -254,8 +254,8 @@ public class FormUploadTest extends TestVerticle {
         });
         Buffer buffer = new Buffer();
         buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&password=admin");
-        req.headers().put("content-length", buffer.length());
-        req.headers().put("content-type", "application/x-www-form-urlencoded");
+        req.headers().set("content-length", String.valueOf(buffer.length()));
+        req.headers().set("content-type", "application/x-www-form-urlencoded");
         req.write(buffer).end();
       }
     });
