@@ -270,7 +270,7 @@ public class MultipartRequest {
     }
 
     @Override
-    public ByteBuf data() {
+    public ByteBuf content() {
       throw new UnsupportedOperationException();
     }
 
