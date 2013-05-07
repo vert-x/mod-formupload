@@ -2,8 +2,6 @@ package org.vertx.mods.formupload;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.*;
@@ -31,6 +29,7 @@ public class MultipartRequest {
   private final HttpServerRequest req;
   private Handler<Attribute> attrHandler;
   private Handler<Upload> uploadHandler;
+  private Handler<Void> endHandler;
   private final Map<String, String> attributes = new HashMap<>();
   private final HttpRequest nettyReq;
 
@@ -42,18 +41,13 @@ public class MultipartRequest {
     // TODO - this is a bit of a hack
     HttpRequest nettyReq = ((DefaultHttpServerRequest)req).nettyRequest();
     try {
-      if (nettyReq instanceof HttpContent) {
-          // This is a work around for a bug in netty. Will remove once upgrade netty
-          nettyReq = ((FullHttpRequest) nettyReq).copy();
-      }
       this.nettyReq = nettyReq;
       decoder = new HttpPostRequestDecoder(new DataFactory(), nettyReq);
       req.dataHandler(new Handler<Buffer>() {
         @Override
         public void handle(Buffer event) {
           try {
-            // This is a work around for a bug in netty. Will remove once upgrade netty
-            decoder.offer(new DefaultHttpContent(event.getByteBuf().copy()));
+            decoder.offer(new DefaultHttpContent(event.getByteBuf()));
           } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
             throw convertException(e);
           }
@@ -66,12 +60,21 @@ public class MultipartRequest {
             decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
           } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
             throw convertException(e);
+          } finally {
+            // notify endhandler in all cases
+            if (endHandler != null) {
+              endHandler.handle(null);
+            }
           }
         }
       });
     } catch (Exception e) {
       throw convertException(e);
     }
+  }
+
+  public void endHandler(Handler<Void> endHandler) {
+    this.endHandler = endHandler;
   }
 
   public void attributeHandler(Handler<Attribute> handler) {
@@ -293,6 +296,7 @@ public class MultipartRequest {
 
   private class InternalMemoryAttribute extends MemoryAttribute {
 
+    private boolean notified;
     private InternalMemoryAttribute(String name) {
       super(name);
     }
@@ -307,11 +311,38 @@ public class MultipartRequest {
       attributeCreated();
     }
 
-    void attributeCreated() {
-      attributes.put(getName(), getValue());
-      if (attrHandler != null) {
-        attrHandler.handle(new Attribute(getName(), getValue()));
+    private void attributeCreated() {
+      if (!notified && isCompleted()) {
+        notified = true;
+        attributes.put(getName(), getValue());
+        if (attrHandler != null) {
+          attrHandler.handle(new Attribute(getName(), getValue()));
+        }
       }
+    }
+
+    @Override
+    public void setContent(ByteBuf buffer) throws IOException {
+        super.setContent(buffer);
+        attributeCreated();
+    }
+
+    @Override
+    public void setContent(InputStream inputStream) throws IOException {
+        super.setContent(inputStream);
+        attributeCreated();
+    }
+
+    @Override
+    public void setContent(File file) throws IOException {
+        super.setContent(file);
+        attributeCreated();
+    }
+
+    @Override
+    public void addContent(ByteBuf buffer, boolean last) throws IOException {
+      super.addContent(buffer, last);
+      attributeCreated();
     }
   }
 
