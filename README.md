@@ -1,3 +1,5 @@
+# This module is now deprecated, as multi-part form upload functionality now exists in the Vert.x core API
+
 # Form Upload
 
 This non runnable module implements multipart form upload functionality.
