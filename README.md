@@ -1,22 +1,24 @@
-# This module is now deprecated, as multi-part form upload functionality now exists in the Vert.x core API
+# Vert.x 2.x is **deprecated** - use instead http://vertx.io/docs/vertx-core/java/#_handling_requests
 
-# Form Upload
+## This module is now deprecated, as multi-part form upload functionality now exists in the Vert.x core API
+
+## Form Upload
 
 This non runnable module implements multipart form upload functionality.
 
-## Dependencies
+### Dependencies
 
 No dependencies
 
-## Name
+### Name
 
 The module name is `vertx.formupload-vV`. (Where V is the version, e.g. 1.0)
 
-## Configuration
+### Configuration
 
 No configuration
 
-## Usage
+### Usage
 
 If you are using this module from another module (moduleA) then you should add the name of this module to the
 'includes' field in the mod.json for moduleA.
